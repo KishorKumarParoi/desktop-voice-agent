@@ -3,120 +3,579 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Desktop Voice Assistant</title>
-  <link rel="stylesheet" href="/css/style.css">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🖥️</text></svg>">
+  <title>Desktop Assistant • Autonomous OS Voice Controller</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #090b10;
+      --panel-bg: rgba(18, 22, 34, 0.75);
+      --border: rgba(255, 255, 255, 0.08);
+      --orange: #f97316;
+      --orange-glow: rgba(249, 115, 22, 0.35);
+      --cyan: #06b6d4;
+      --cyan-glow: rgba(6, 182, 212, 0.25);
+      --red: #ef4444;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --mono: 'JetBrains Mono', monospace;
+      --sans: 'Plus Jakarta Sans', sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: radial-gradient(circle at 50% 0%, #151d2d 0%, #090b10 75%);
+      color: var(--text);
+      font-family: var(--sans);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Top Navigation */
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1.25rem 2.5rem;
+      border-bottom: 1px solid var(--border);
+      backdrop-filter: blur(16px);
+      background: rgba(9, 11, 16, 0.8);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.9rem;
+      text-decoration: none;
+      color: inherit;
+    }
+    .brand-icon {
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #ea580c, #f97316);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.4rem;
+      box-shadow: 0 0 20px var(--orange-glow);
+    }
+    .brand-title {
+      font-size: 1.2rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+    .brand-subtitle {
+      font-size: 0.72rem;
+      color: var(--orange);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .header-pills {
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
+      font-size: 0.8rem;
+      font-family: var(--mono);
+    }
+    .live-badge {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.35rem 0.85rem;
+      border-radius: 9999px;
+      background: rgba(249, 115, 22, 0.12);
+      border: 1px solid rgba(249, 115, 22, 0.3);
+      color: #fb923c;
+      font-weight: 600;
+    }
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--orange);
+      animation: pulse 1.5s infinite;
+    }
+    @keyframes pulse {
+      0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(249, 115, 22, 0.7); }
+      70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(249, 115, 22, 0); }
+      100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(249, 115, 22, 0); }
+    }
+
+    /* Main Grid */
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: 320px 1fr 380px;
+      gap: 1.5rem;
+      padding: 2rem 2.5rem;
+      flex: 1;
+      max-width: 1700px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    /* Panel Card */
+    .panel {
+      background: var(--panel-bg);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 1.5rem;
+      backdrop-filter: blur(20px);
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
+    }
+    .panel-heading {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--orange);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    /* Gauges */
+    .gauge-card {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 12px;
+      padding: 1.1rem;
+    }
+    .gauge-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.8rem;
+      margin-bottom: 0.5rem;
+    }
+    .gauge-bar-bg {
+      height: 8px;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 9999px;
+      overflow: hidden;
+    }
+    .gauge-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--orange), #fb923c);
+      border-radius: 9999px;
+      transition: width 0.5s ease;
+    }
+
+    /* App Dock */
+    .dock-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .dock-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.75rem 1rem;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 10px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .dock-item:hover {
+      background: rgba(249, 115, 22, 0.1);
+      border-color: rgba(249, 115, 22, 0.3);
+      transform: translateX(4px);
+    }
+
+    /* Center Voice Hub */
+    .voice-hub {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      gap: 2rem;
+      padding: 3rem 1.5rem;
+    }
+
+    .voice-orb {
+      width: 140px;
+      height: 140px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #f97316 0%, #ea580c 60%, #9a3412 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 3.5rem;
+      cursor: pointer;
+      box-shadow: 0 0 50px var(--orange-glow);
+      transition: all 0.3s;
+      border: 4px solid rgba(255, 255, 255, 0.2);
+    }
+    .voice-orb:hover {
+      transform: scale(1.08);
+      box-shadow: 0 0 70px rgba(249, 115, 22, 0.6);
+    }
+    .voice-orb.listening {
+      background: radial-gradient(circle, #ef4444 0%, #b91c1c 100%);
+      animation: listening-pulse 1.2s infinite;
+    }
+    @keyframes listening-pulse {
+      0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.8); }
+      70% { transform: scale(1.12); box-shadow: 0 0 0 25px rgba(239, 68, 68, 0); }
+      100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+    }
+
+    .hub-title {
+      font-size: 1.8rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+    .hub-subtitle {
+      font-size: 0.95rem;
+      color: var(--muted);
+      max-width: 480px;
+      line-height: 1.5;
+    }
+
+    /* Input Bar */
+    .input-bar {
+      width: 100%;
+      max-width: 640px;
+      display: flex;
+      gap: 0.75rem;
+    }
+    .text-input {
+      flex: 1;
+      background: rgba(10, 14, 20, 0.9);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 12px;
+      padding: 1rem 1.4rem;
+      font-size: 1rem;
+      color: #fff;
+      font-family: var(--sans);
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .text-input:focus {
+      border-color: var(--orange);
+      box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.2);
+    }
+    .btn-exec {
+      padding: 0 1.6rem;
+      border-radius: 12px;
+      background: var(--orange);
+      color: #fff;
+      font-weight: 700;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-exec:hover {
+      background: #fb923c;
+      transform: translateY(-2px);
+    }
+
+    /* Trigger Pills */
+    .trigger-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.6rem;
+      justify-content: center;
+      max-width: 640px;
+    }
+    .action-pill {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      padding: 0.45rem 0.9rem;
+      border-radius: 9999px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      color: #cbd5e1;
+      transition: all 0.2s;
+    }
+    .action-pill:hover {
+      background: rgba(249, 115, 22, 0.15);
+      border-color: var(--orange);
+      color: #fff;
+    }
+
+    /* Terminal Console */
+    .terminal-body {
+      background: #06080c;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 10px;
+      padding: 1rem;
+      font-family: var(--mono);
+      font-size: 0.8rem;
+      flex: 1;
+      overflow-y: auto;
+      max-height: 480px;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+    .terminal-line {
+      line-height: 1.4;
+      word-break: break-all;
+    }
+    .terminal-line.cmd { color: #38bdf8; }
+    .terminal-line.ok { color: #4ade80; }
+    .terminal-line.info { color: #94a3b8; }
+    .terminal-line.kill { color: #f87171; }
+
+    /* Spoken HUD banner */
+    .spoken-hud {
+      background: rgba(249, 115, 22, 0.1);
+      border: 1px solid rgba(249, 115, 22, 0.3);
+      border-radius: 12px;
+      padding: 1rem;
+      font-size: 0.9rem;
+      font-style: italic;
+      color: #fed7aa;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    @media (max-width: 1180px) {
+      .dashboard-grid { grid-template-columns: 1fr; }
+    }
+  </style>
 </head>
 <body>
-  <div class="container">
-    <header class="header">
-      <div class="brand">
-        <div class="brand-icon">🖥️</div>
-        <div class="brand-info">
-          <h1>Desktop Assistant</h1>
-          <p>Personal voice assistant that controls your desktop, launches apps, and automates tasks.</p>
-        </div>
+  <header>
+    <a href="/" class="brand">
+      <div class="brand-icon">🖥️</div>
+      <div>
+        <div class="brand-title">Desktop Assistant</div>
+        <div class="brand-subtitle">Autonomous OS Voice Controller</div>
       </div>
-      <div style="display: flex; gap: 10px;">
-        <button id="livekitBtn" class="status-pill" style="cursor: pointer; background: var(--accent-bg); color: var(--accent-color); font-weight: 600;">
-          📡 LiveKit WebRTC
-        </button>
-        <div class="status-pill">
-          <span class="status-dot"></span>
-          <span>Online &bull; Low-Latency</span>
-        </div>
+    </a>
+    <div class="header-pills">
+      <span style="color: var(--muted);">Host: macOS Darwin 24.1 (ARM64)</span>
+      <div class="live-badge"><div class="dot"></div> System Daemon Active</div>
+    </div>
+  </header>
+
+  <div class="dashboard-grid">
+    <!-- Left: Telemetry & App Dock -->
+    <div class="panel">
+      <div class="panel-heading">
+        <span>Hardware Telemetry</span>
+        <span style="font-family: var(--mono); font-size: 0.7rem; color: var(--muted);">REFRESH: 1s</span>
       </div>
-    </header>
 
-    <main class="main-card">
-      <div class="console-row">
-        <div class="visualizer-box">
-          <div style="display: flex; justify-content: space-between; font-size: 13px; color: #94a3b8;">
-            <span id="statusLabel">Ready for Voice Input</span>
-            <span style="background: rgba(255,255,255,0.1); padding: 3px 8px; border-radius: 9999px;">Dynamic 60fps</span>
-          </div>
-          <canvas id="visualizerCanvas" class="visualizer-canvas"></canvas>
-          <div class="controls-bar">
-            <button id="micBtn" class="mic-btn">
-              <span>🎙️ Push to Talk</span>
-            </button>
-            <button id="interruptBtn" class="interrupt-btn">
-              <span>🛑 Barge-in Stop</span>
-            </button>
-            <button id="quickQueryBtn" class="interrupt-btn" style="background: rgba(255,255,255,0.18);">
-              <span>⚡ Quick Query</span>
-            </button>
-          </div>
+      <div class="gauge-card">
+        <div class="gauge-header">
+          <span style="color: var(--muted);">CPU Load</span>
+          <span id="cpuVal" style="font-family: var(--mono); font-weight: 700; color: #fb923c;">24.2%</span>
         </div>
+        <div class="gauge-bar-bg"><div class="gauge-bar-fill" id="cpuBar" style="width: 24.2%;"></div></div>
+      </div>
 
-        <div class="metrics-box">
-          <div class="metrics-title">
-            <span>Latency Waterfall</span>
-            <span style="font-size: 12px; color: #64748b;">Telemetry</span>
-          </div>
-          <div>
-            <div class="latency-line"><span>ASR Transcription:</span> <b id="asrVal">45.0 ms</b></div>
-            <div class="latency-line"><span>LLM TTFT:</span> <b id="llmVal">180.0 ms</b></div>
-            <div class="latency-line"><span>TTS TTFB:</span> <b id="ttsVal">135.0 ms</b></div>
-          </div>
-          <div class="total-box">
-            <div style="font-size: 11px; color: #64748b; text-transform: uppercase;">Roundtrip Latency</div>
-            <div class="total-num" id="totalVal">360.0 ms</div>
-          </div>
+      <div class="gauge-card">
+        <div class="gauge-header">
+          <span style="color: var(--muted);">RAM Utilization</span>
+          <span id="ramVal" style="font-family: var(--mono); font-weight: 700; color: #fb923c;">7.8 / 16.0 GB</span>
+        </div>
+        <div class="gauge-bar-bg"><div class="gauge-bar-fill" id="ramBar" style="width: 48.7%;"></div></div>
+      </div>
+
+      <div class="gauge-card">
+        <div class="gauge-header">
+          <span style="color: var(--muted);">Foreground Window</span>
+          <span id="activeWin" style="font-family: var(--mono); font-size: 0.75rem; color: #38bdf8;">Visual Studio Code</span>
         </div>
       </div>
 
-      <div class="activity-grid">
-        <div class="transcript-box">
-          <div class="box-title">Live Transcript</div>
-          <div class="messages-list" id="msgList">
-            <div class="msg-bubble msg-agent">
-              Hello! I am your Desktop Assistant. How can I assist you right now?
-            </div>
-          </div>
+      <div class="panel-heading" style="margin-top: 0.5rem;">Running Process Dock</div>
+      <div class="dock-list" id="dockList">
+        <div class="dock-item" onclick="sendCmd('launch Visual Studio Code')">
+          <span>💻 Visual Studio Code</span>
+          <span style="color: #4ade80; font-size: 0.7rem;">● RUNNING</span>
         </div>
-
-        <div class="actions-box">
-          <div class="box-title">Tool Executions & Decisions</div>
-          <div class="actions-list" id="actionList">
-            <div class="action-card">⚡ Application Control, OS Telemetry & Safe Scripts online</div>
-          </div>
+        <div class="dock-item" onclick="sendCmd('launch Terminal')">
+          <span>⚡ Terminal (iTerm2)</span>
+          <span style="color: #4ade80; font-size: 0.7rem;">● RUNNING</span>
         </div>
-      </div>
-
-      <div class="settings-bar">
-        <div>
-          <label><b>Mode:</b></label>
-          <select id="ragSel">
-            <option value="ragless">RAG-less (Direct Context)</option>
-            <option value="rag">RAG (Vector Search)</option>
-          </select>
+        <div class="dock-item" onclick="sendCmd('launch Google Chrome')">
+          <span>🌐 Google Chrome</span>
+          <span style="color: #4ade80; font-size: 0.7rem;">● RUNNING</span>
         </div>
-        <div>
-          <label><b>Streaming:</b></label>
-          <select id="streamSel">
-            <option value="streaming">Streaming Mode</option>
-            <option value="batch">Batch Mode</option>
-          </select>
-        </div>
-        <div>
-          <label><b>TTS Engine:</b></label>
-          <select id="ttsSel">
-            <option value="elevenlabs">ElevenLabs Turbo v2.5</option>
-            <option value="openai">OpenAI TTS-1</option>
-            <option value="browser">Browser Native</option>
-          </select>
+        <div class="dock-item" onclick="sendCmd('launch Slack')">
+          <span>💬 Slack</span>
+          <span style="color: #4ade80; font-size: 0.7rem;">● RUNNING</span>
         </div>
       </div>
-    </main>
+    </div>
 
-    <footer class="footer">
-      <p>Part of Nimbus Voice Suite &bull; Deployed at <a href="https://desktop.kishor.tech">https://desktop.kishor.tech</a> &bull; Powered by LiveKit WebRTC</p>
-    </footer>
+    <!-- Center: Voice Controller Orb & Quick Triggers -->
+    <div class="panel voice-hub">
+      <div class="voice-orb" id="voiceOrb" onclick="toggleMic()" title="Tap to speak command">🎙️</div>
+      <div>
+        <div class="hub-title" id="hubStatus">Voice Control Ready</div>
+        <div class="hub-subtitle">Click the orb or say: "Launch VS Code", "Clean temporary caches", "Toggle focus mode", or "Check CPU diagnostics".</div>
+      </div>
+
+      <div class="spoken-hud" id="spokenHud" style="display: none;">
+        <span>🗣️</span>
+        <span id="spokenReplyText">"System metrics nominal. CPU load is at 24%."</span>
+      </div>
+
+      <div class="input-bar">
+        <input type="text" id="cmdInput" class="text-input" placeholder="Type or speak a desktop command..." />
+        <button class="btn-exec" onclick="execFromInput()">Execute</button>
+      </div>
+
+      <div class="trigger-grid">
+        <div class="action-pill" onclick="sendCmd('Launch Visual Studio Code')">🚀 Launch VS Code</div>
+        <div class="action-pill" onclick="sendCmd('Launch Google Chrome')">🌐 Open Chrome</div>
+        <div class="action-pill" onclick="sendCmd('Toggle focus mode')">🎯 Toggle Focus Mode</div>
+        <div class="action-pill" onclick="sendCmd('Clean temporary system caches')">🧹 Purge Caches</div>
+        <div class="action-pill" onclick="sendCmd('Kill Slack')">🛑 Terminate Slack</div>
+        <div class="action-pill" onclick="sendCmd('Check system telemetry')">📊 CPU Diagnostics</div>
+      </div>
+    </div>
+
+    <!-- Right: Execution Stream Terminal Console -->
+    <div class="panel">
+      <div class="panel-heading">
+        <span>Execution Daemon Stream</span>
+        <span style="font-family: var(--mono); font-size: 0.7rem; color: #4ade80;">READY</span>
+      </div>
+
+      <div class="terminal-body" id="termLog">
+        <div class="terminal-line info">[SYS] Desktop Voice Daemon initialized.</div>
+        <div class="terminal-line info">[SYS] Listening on IPC socket /var/run/desktop.sock</div>
+        <div class="terminal-line ok">[OK] Accessibility API permissions granted.</div>
+      </div>
+    </div>
   </div>
 
-  <script src="/js/visualizer.js"></script>
-  <script src="/js/voice-engine.js"></script>
-  <script src="/js/app.js"></script>
+  <script>
+    let isListening = false;
+    let recognition = null;
+
+    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      recognition = new SpeechRecognition();
+      recognition.continuous = false;
+      recognition.interimResults = false;
+      recognition.lang = 'en-US';
+
+      recognition.onstart = () => {
+        isListening = true;
+        document.getElementById('voiceOrb').classList.add('listening');
+        document.getElementById('hubStatus').innerText = "Listening for Command...";
+      };
+      recognition.onresult = (e) => {
+        const text = e.results[0][0].transcript;
+        document.getElementById('cmdInput').value = text;
+        sendCmd(text);
+      };
+      recognition.onerror = () => stopMic();
+      recognition.onend = () => stopMic();
+    }
+
+    function toggleMic() {
+      if (!recognition) {
+        alert("Web Speech API is not supported in this browser. Please type commands below.");
+        return;
+      }
+      if (isListening) {
+        recognition.stop();
+        stopMic();
+      } else {
+        recognition.start();
+      }
+    }
+
+    function stopMic() {
+      isListening = false;
+      document.getElementById('voiceOrb').classList.remove('listening');
+      document.getElementById('hubStatus').innerText = "Voice Control Ready";
+    }
+
+    function execFromInput() {
+      const val = document.getElementById('cmdInput').value.trim();
+      if (val) sendCmd(val);
+    }
+
+    document.getElementById('cmdInput').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') execFromInput();
+    });
+
+    async function sendCmd(query) {
+      document.getElementById('cmdInput').value = query;
+      document.getElementById('hubStatus').innerText = "Executing: " + query;
+
+      try {
+        const resp = await fetch("/api/desktop/execute", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ query: query })
+        });
+        const data = await resp.json();
+        handleResult(data);
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    function handleResult(data) {
+      document.getElementById('hubStatus').innerText = "Command Executed";
+      
+      // Spoken HUD
+      const hud = document.getElementById('spokenHud');
+      hud.style.display = 'flex';
+      document.getElementById('spokenReplyText').innerText = `"${data.spoken_reply}"`;
+
+      // Speech synthesis
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const utt = new SpeechSynthesisUtterance(data.spoken_reply);
+        utt.rate = 1.1;
+        window.speechSynthesis.speak(utt);
+      }
+
+      // Update telemetry
+      const m = data.updated_metrics;
+      document.getElementById('cpuVal').innerText = m.cpu_percent + '%';
+      document.getElementById('cpuBar').style.width = m.cpu_percent + '%';
+      document.getElementById('ramVal').innerText = `${m.ram_used_gb} / ${m.ram_total_gb} GB`;
+      document.getElementById('ramBar').style.width = m.ram_percent + '%';
+      document.getElementById('activeWin').innerText = m.active_window;
+
+      // Append Terminal logs
+      const term = document.getElementById('termLog');
+      data.console_log.forEach(line => {
+        const div = document.createElement('div');
+        div.className = 'terminal-line ' + (line.startsWith('[OK]') ? 'ok' : line.startsWith('[KILL]') ? 'kill' : 'cmd');
+        div.innerText = line;
+        term.appendChild(div);
+      });
+      term.scrollTop = term.scrollHeight;
+    }
+
+    // Periodic telemetry ping
+    setInterval(async () => {
+      try {
+        const res = await fetch("/api/desktop/metrics");
+        const m = await res.json();
+        document.getElementById('cpuVal').innerText = m.cpu_percent + '%';
+        document.getElementById('cpuBar').style.width = m.cpu_percent + '%';
+        document.getElementById('ramVal').innerText = `${m.ram_used_gb} / ${m.ram_total_gb} GB`;
+        document.getElementById('ramBar').style.width = m.ram_percent + '%';
+      } catch (e) {}
+    }, 4000);
+  </script>
 </body>
 </html>
